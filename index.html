@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚗 Park Ease</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                <div style="flex: 1;">
+                    <h1>🚗 Park Ease</h1>
+                    <p id="liveClock">Easy Parking With Smart Slot Allocation.</p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="background: rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 10px; margin-bottom: 10px; display: inline-block;">
+                        👤 <span id="username" style="font-weight: 600;">Loading...</span>
+                    </div>
+                    <br>
+                    <button id="logoutBtn" style="background: rgba(255,255,255,0.3); border: 2px solid rgba(255,255,255,0.5); padding: 10px 20px; border-radius: 8px; color: white; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s;">
+                        🚪 Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="control-panel">
+                <div class="section">
+                    <h3>🅿️ Vehicle Check-in</h3>
+                    <div class="form-group">
+                        <label for="carNumber">Car Number Plate:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input id="carNumber" type="text" placeholder="e.g., MH02FM1234" style="flex: 1;">
+                            <button id="scanPlateCheckIn" class="btn" style="padding: 12px; font-size: 16px;">📷 Scan</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicleType">Vehicle Type:</label>
+                        <select id="vehicleType" onchange="updateParkingGrid()">
+                            <option value="car">Car - ₹60/hour</option>
+                            <option value="bike">Bike - ₹30/hour</option>
+                            <option value="truck">Truck/Bus - ₹100/hour</option>
+                            <option value="charging">EV Charging - ₹300/hour</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="duration">Expected Duration (hours):</label>
+                        <input id="duration" type="number" min="1" value="2">
+                    </div>
+                    <button class="btn" onclick="checkInVehicle()">🎫 Check-in & Get Slot</button>
+                    <div id="receiptContainer"></div>
+                </div>
+
+                <div class="section search-section">
+                    <h3>🔍 Find Parked Vehicle</h3>
+                    <div class="form-group">
+                        <label for="searchCar">Search by Car Number:</label>
+                        <input id="searchCar" type="text" placeholder="e.g., MH02FM1234">
+                    </div>
+                    <button class="btn" onclick="searchVehicle()">Search Vehicle</button>
+                    <div id="searchResult"></div>
+                </div>
+
+                <div class="section">
+                    <h3>🚪 Vehicle Check-out</h3>
+                    <div class="form-group">
+                        <label for="checkoutCar">Car Number Plate:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input id="checkoutCar" type="text" placeholder="e.g., MH02FM1234" style="flex: 1;">
+                            <button id="scanPlateCheckOut" class="btn" style="padding: 12px; font-size: 16px;">📷 Scan</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-checkout" onclick="checkOutVehicle()">🚗 Check-out Vehicle</button>
+                </div>
+
+                <div class="section">
+                    <h3>🔧 System Management</h3>
+                    <button class="btn" onclick="printParkingReport()">📊 Print Parking Report</button>
+                    <button class="btn btn-print-small" onclick="exportParkingData()">💾 Export Data</button>
+                    <input type="file" id="importData" accept=".json" onchange="importParkingData(event)" style="display: none;">
+                    <button class="btn btn-print-small" onclick="document.getElementById('importData').click()">📥 Import Data</button>
+                    <button class="btn btn-print-small" onclick="showAnalytics()">📈 View Analytics</button>
+                    <button class="btn btn-checkout btn-print-small" onclick="resetParkingSystem()">🗑️ Reset System</button>
+                </div>
+
+               
+
+                <div class="section">
+                    <h3>📜 Parking History</h3>
+                    <button class="btn" onclick="toggleParkingHistory()">View Parking History</button>
+                    <button class="btn btn-print-small" onclick="printParkingHistory()">🖨️ Print History</button>
+                    <div id="parkingHistoryContainer" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="parking-grid">
+                <div class="grid-header">
+                    <h3>🏢 Parking Slots Status</h3>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-number" id="totalSlots">100</div>
+                            <div class="stat-label">Total Slots</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="availableSlots">100</div>
+                            <div class="stat-label">Available</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="occupiedSlots">0</div>
+                            <div class="stat-label">Occupied</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="slots-container" id="slotsContainer"></div>
+                <div style="margin-top: 20px;">
+                    <span style="color: #27ae60;">🟢 Available</span> &nbsp;&nbsp;&nbsp;
+                    <span style="color: #e74c3c;">🔴 Occupied</span>
+                </div>
+                <div id="alertContainer"></div>
+                <div id="analyticsContainer" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="cameraModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; padding:20px; border-radius:10px; text-align:center;">
+            <video id="video" width="320" height="240" autoplay></video><br>
+            <button id="capture" class="btn">Capture</button>
+            <button id="closeModal" class="btn">Close</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/tesseract.js@v5.1.1/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <script>
+        // Authentication check FIRST - runs before SCRIPT.JS loads
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get("token");
+            
+            if (token) {
+                try {
+                    const user = JSON.parse(atob(token));
+                    localStorage.setItem('parkEaseUser', JSON.stringify(user));
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('token');
+                    window.history.replaceState({}, document.title, url.toString());
+                } catch (err) {
+                    console.error('Invalid token:', err);
+                    window.location.href = 'server.html';
+                    throw new Error('Authentication failed');
+                }
+            } else {
+                const savedUser = localStorage.getItem('parkEaseUser');
+                if (!savedUser) {
+                    window.location.href = 'server.html';
+                    throw new Error('Not authenticated');
+                }
+            }
+        })();
+    </script>
+    
+    <!-- Load main script AFTER authentication -->
+    <script src="script.js"></script>
+    
+    <script>
+        // Authentication UI setup - runs AFTER SCRIPT.JS
+        window.addEventListener('load', function() {
+            const userInfoElement = document.getElementById('username');
+            const logoutBtn = document.getElementById('logoutBtn');
+            
+            // Display logged-in user
+            const savedUser = localStorage.getItem('parkEaseUser');
+            if (savedUser) {
+                try {
+                    const user = JSON.parse(savedUser);
+                    userInfoElement.textContent = user.username || user.email || 'User';
+                } catch (err) {
+                    console.error('Error loading saved user:', err);
+                    userInfoElement.textContent = 'User';
+                }
+            }
+            
+            // Logout functionality
+            logoutBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to logout?')) {
+                    localStorage.removeItem('parkEaseUser');
+                    window.location.href = 'server.html';
+                }
+            });
+
+            // Hover effects
+            logoutBtn.addEventListener('mouseenter', function() {
+                this.style.background = 'rgba(255,255,255,0.5)';
+                this.style.transform = 'scale(1.05)';
+            });
+            
+            logoutBtn.addEventListener('mouseleave', function() {
+                this.style.background = 'rgba(255,255,255,0.3)';
+                this.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>
